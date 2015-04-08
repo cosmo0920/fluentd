@@ -18,9 +18,14 @@ require 'json'
 
 require 'fluent/input'
 require 'fluent/config/error'
+require 'fluent/plugin_helper/thread'
+require 'fluent/plugin_helper/storage'
 
 module Fluent
   class DummyInput < Input
+    include Fluent::PluginHelper::Thread
+    include Fluent::PluginHelper::Storage
+
     Fluent::Plugin.register_input('dummy', self)
 
     BIN_NUM = 10
@@ -31,6 +36,8 @@ module Fluent
     config_param :rate, :integer, default: 1
     desc "If specified, each generated event has an auto-incremented key field."
     config_param :auto_increment_key, :string, default: nil
+    desc "The boolean to suspend-and-resume incremental value after restart"
+    config_param :suspend, :bool, default: false
     desc "The dummy data to be generated. An array of JSON hashes or a single JSON hash."
     config_param :dummy, default: [{"message"=>"dummy"}] do |val|
       begin
@@ -51,12 +58,18 @@ module Fluent
     def configure(conf)
       super
 
-      @increment_value = 0
-      @dummy_index = 0
+      unless @suspend
+        storage.autosave = false
+        storage.save_at_shutdown = false
+      end
     end
 
     def start
       super
+
+      storage.put(:increment_value, 0) unless storage.get(:increment_value)
+      storage.put(:dummy_index, 0) unless storage.get(:dummy_index)
+
       @running = true
       @thread = Thread.new(&method(:run))
     end
@@ -88,18 +101,24 @@ module Fluent
     end
 
     def generate
-      d = @dummy[@dummy_index]
-      unless d
-        @dummy_index = 0
-        d = @dummy[0]
+      storage.synchronize do
+        index = storage.get(:dummy_index)
+        d = @dummy[index]
+        unless d
+          index = 0
+          d = @dummy[index]
+        end
+        storage.put(:dummy_index, index + 1)
+
+        if @auto_increment_key
+          d = d.dup
+          inc_value = storage.get(:increment_value)
+          d[@auto_increment_key] = inc_value
+          storage.put(:increment_value, inc_value + 1)
+        end
+
+        d
       end
-      @dummy_index += 1
-      if @auto_increment_key
-        d = d.dup
-        d[@auto_increment_key] = @increment_value
-        @increment_value += 1
-      end
-      d
     end
 
     def wait(time)
