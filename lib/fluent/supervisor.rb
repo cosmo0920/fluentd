@@ -130,6 +130,7 @@ module Fluent
       apply_system_config
 
       dry_run if @dry_run
+      show_config if @show
       start_daemonize if @daemonize
       setup_rpc_server if @rpc_endpoint
       if @supervise
@@ -184,6 +185,19 @@ module Fluent
       exit 0
     rescue => e
       $log.error "dry run failed: #{e}"
+      exit 1
+    end
+
+    def show_config
+      $log.info "starting fluentd-#{Fluent::VERSION} as show config mode"
+
+      change_privilege
+      init_engine
+      install_main_process_signal_handlers
+      run_configure
+      exit 0
+    rescue => e
+      $log.error "show config failed: #{e}"
       exit 1
     end
 
