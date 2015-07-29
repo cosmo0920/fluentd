@@ -94,6 +94,7 @@ module Fluent
         :without_source => false,
         :use_v1_config => true,
         :supervise => true,
+        :show => false
       }
     end
 
@@ -115,6 +116,7 @@ module Fluent
       @suppress_interval = opt[:suppress_interval]
       @suppress_config_dump = opt[:suppress_config_dump]
       @without_source = opt[:without_source]
+      @show = opt[:show]
 
       log_opts = {:suppress_repeated_stacktrace => opt[:suppress_repeated_stacktrace]}
       @log = LoggerInitializer.new(@log_path, @log_level, @chuser, @chgroup, log_opts)
