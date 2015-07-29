@@ -54,6 +54,7 @@ module Fluent
 
       suppress_interval(opts[:suppress_interval]) if opts[:suppress_interval]
       @without_source = opts[:without_source] if opts[:without_source]
+      @show = opts[:show] if opts[:show]
     end
 
     attr_reader :inputs
