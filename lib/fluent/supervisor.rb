@@ -94,7 +94,7 @@ module Fluent
         :without_source => false,
         :use_v1_config => true,
         :supervise => true,
-        :show => false
+        :show => nil
       }
     end
 

@@ -107,8 +107,8 @@ op.on('--suppress-config-dump', "suppress config dumping when fluentd starts", T
   opts[:suppress_config_dump] = b
 }
 
-op.on('--show', "show plugin options", TrueClass) {|b|
-  opts[:show] = b
+op.on('--show PLUGIN_NAME', "show plugin options") {|s|
+  opts[:show] = s
 }
 
 op.on('-g', '--gemfile GEMFILE', "Gemfile path") {|s|
