@@ -491,7 +491,7 @@ module Fluent
     end
 
     def init_engine
-      init_opts = {:suppress_interval => @suppress_interval, :suppress_config_dump => @suppress_config_dump, :without_source => @without_source}
+      init_opts = {:suppress_interval => @suppress_interval, :suppress_config_dump => @suppress_config_dump, :without_source => @without_source, :show => @show}
       Fluent::Engine.init(init_opts)
 
       @libs.each {|lib|
