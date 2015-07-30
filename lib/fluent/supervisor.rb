@@ -169,7 +169,8 @@ module Fluent
         'config_path' => @config_path,
         'pid_file' => @daemonize,
         'plugin_dirs' => @plugin_dirs,
-        'log_path' => @log_path
+        'log_path' => @log_path,
+        'show' => @show
       }
     end
 
