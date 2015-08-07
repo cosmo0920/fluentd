@@ -171,6 +171,47 @@ module Fluent
       end
     end
 
+    class TSVFormatter < Formatter
+      include HandleTagAndTimeMixin
+
+      config_param :keys, :default => [] do |val|
+        val.split(',')
+      end
+      config_param :delimiter, :string, :default => "\t"
+
+      def configure(conf)
+        super
+
+        if @keys.empty?
+          raise ConfigError, "keys option is required on tsv formatter"
+        end
+      end
+
+      def filter_record(tag, time, record)
+        if @include_time_key
+          record[@time_key] = @timef.format(time)
+        end
+        if @include_tag_key
+          record[@tag_key] = tag
+        end
+      end
+
+      def format(tag, time, record)
+        time_tag_record = {}
+        filter_record(tag, time, time_tag_record)
+        selected = record.select {|key, val|
+          @keys.include?(key)
+        }
+        tmp_record = time_tag_record.merge(selected)
+        formatted = tmp_record.inject('') { |result, pair|
+          result << "\t" if result.length.nonzero?
+          result << "#{pair.last}"
+        }
+        formatted << "\n"
+        formatted
+      end
+    end
+
     class CsvFormatter < Formatter
       include HandleTagAndTimeMixin
 
@@ -233,6 +274,7 @@ module Fluent
       'hash' => Proc.new { HashFormatter.new },
       'msgpack' => Proc.new { MessagePackFormatter.new },
       'ltsv' => Proc.new { LabeledTSVFormatter.new },
+      'tsv' => Proc.new { TSVFormatter.new },
       'csv' => Proc.new { CsvFormatter.new },
       'single_value' => Proc.new { SingleValueFormatter.new },
     }.each { |name, factory|

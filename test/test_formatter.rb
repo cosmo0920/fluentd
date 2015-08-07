@@ -229,6 +229,90 @@ module FormatterTest
     end
   end
 
+  class TSVFormatterTest < ::Test::Unit::TestCase
+    include FormatterTest
+
+    def setup
+      @formatter = TextFormatter::TSVFormatter.new
+      @time = Engine.now
+    end
+
+    def test_format_empty_configure
+      assert_raise ConfigError do
+        @formatter.configure({})
+      end
+    end
+
+    def test_config_params
+      formatter = TextFormatter::TSVFormatter.new
+      assert_equal "\t", formatter.delimiter
+      assert_equal [], formatter.keys
+
+      formatter.configure(
+        'delimiter' => ',',
+        'keys'      => 'key1,key2',
+      )
+
+      assert_equal ",", formatter.delimiter
+      assert_equal ["key1", "key2"], formatter.keys
+    end
+
+    def test_format
+      @formatter.configure('keys' => 'key1,key2')
+      formatted = @formatter.format(tag, @time, {
+        'key1' => 'awesome',
+        'key2' => 'awesome2'
+      })
+      assert_equal("awesome\tawesome2\n", formatted)
+    end
+
+    def test_format_keys
+      @formatter.configure('keys' => 'key1,key3')
+      formatted = @formatter.format(tag, @time, {
+        'key1' => 'awesome',
+        'key2' => 'awesome2',
+        'key3' => 'awesome3',
+      })
+      assert_equal("awesome\tawesome3\n", formatted)
+    end
+
+    def test_format_with_time
+      @formatter.configure('keys' => 'key1,key3',
+                           'include_time_key' => 'true',
+                           'time_format' => '%Y')
+      formatted = @formatter.format(tag, @time, {
+        'key1' => 'awesome',
+        'key2' => 'awesome2',
+        'key3' => 'awesome3',
+      })
+      assert_equal("#{Time.now.year}\tawesome\tawesome3\n", formatted)
+    end
+
+    def test_format_with_tag
+      @formatter.configure('keys' => 'key1,key3',
+                           'include_tag_key' => 'true')
+      formatted = @formatter.format(tag, @time, {
+        'key1' => 'awesome',
+        'key2' => 'awesome2',
+        'key3' => 'awesome3',
+      })
+      assert_equal("tag\tawesome\tawesome3\n", formatted)
+    end
+
+    def test_format_with_tag_and_time
+      @formatter.configure('keys' => 'key1,key3',
+                           'include_tag_key' => 'true',
+                           'include_time_key' => 'true',
+                           'time_format' => '%Y')
+      formatted = @formatter.format(tag, @time, {
+        'key1' => 'awesome',
+        'key2' => 'awesome2',
+        'key3' => 'awesome3',
+      })
+      assert_equal("#{Time.now.year}\ttag\tawesome\tawesome3\n", formatted)
+    end
+  end
+
   class CsvFormatterTest < ::Test::Unit::TestCase
     include FormatterTest
 
