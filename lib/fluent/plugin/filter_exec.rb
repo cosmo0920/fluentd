@@ -172,22 +172,25 @@ module Fluent
     end
 
     def reform(record)
-      @mutex.synchronize do
-        r = @rr = (@rr + 1) % @children.length
-        @children[r].write_record record
-      end
+      r = @rr = (@rr + 1) % @children.length
+      @children[r].write_record record
     end
 
-    def filter(tag, time, record)
-      out = ''
-      if @time_key
-        record[@time_key] = @time_format_proc.call(time)
-      end
-      if @tag_key
-        record[@tag_key] = tag
-      end
-      @formatter.call(record, out)
-      reform(out)
+    def filter_stream(tag, es)
+      new_es = MultiEventStream.new
+      es.each { |time, record|
+        out = ''
+        if @time_key
+          record[@time_key] = @time_format_proc.call(time)
+        end
+        if @tag_key
+          record[@tag_key] = tag
+        end
+        @formatter.call(record, out)
+        reformed = reform(out)
+        new_es.add(time, reformed)
+      }
+      new_es
     end
 
     def on_message(record)
