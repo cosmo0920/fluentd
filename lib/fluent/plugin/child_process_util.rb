@@ -78,6 +78,22 @@ class ChildProcess
     end
   end
 
+  def write_record(record)
+    begin
+      @io.write record
+      @io.close_write
+      @io.read
+    rescue Errno::EPIPE => e
+      # Broken pipe (child process unexpectedly exited)
+      @log.warn "exec_filter Broken pipe, child process maybe exited.", :command => @command
+      if try_respawn
+        retry # retry chunk#write_to with child respawned
+      else
+        raise e # to retry #write with other ChildProcess instance (when num_children > 1)
+      end
+    end
+  end
+
   def try_respawn
     return false if @respawns == 0
     @mutex.synchronize do
