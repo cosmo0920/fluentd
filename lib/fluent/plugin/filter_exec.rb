@@ -133,6 +133,7 @@ module Fluent
 
       @suppress_error_log_interval ||= 0
       @next_log_time = Time.now.to_i
+      @mutex = Mutex.new
     end
 
     def start
@@ -171,8 +172,10 @@ module Fluent
     end
 
     def reform(record)
-      r = @rr = (@rr + 1) % @children.length
-      @children[r].write_record record
+      @mutex.synchronize do
+        r = @rr = (@rr + 1) % @children.length
+        @children[r].write_record record
+      end
     end
 
     def filter(tag, time, record)
