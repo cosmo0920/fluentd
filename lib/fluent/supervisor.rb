@@ -348,6 +348,11 @@ module Fluent
         $log.debug "fluentd supervisor process get SIGUSR1"
         supervisor_sigusr1_handler
       end
+
+      trap :USR2 do
+        $log.debug "fluentd supervisor process get SIGUSR2"
+        supervisor_sigusr2_handler
+      end
     end
 
     def supervisor_sigint_handler
@@ -395,6 +400,14 @@ module Fluent
       @log.reopen!
       if pid = @main_pid
         Process.kill(:USR1, pid)
+        # don't resuce Erro::ESRSH here (invalid status)
+      end
+    end
+
+    def supervisor_sigusr2_handler
+      @log.reopen!
+      if pid = @main_pid
+        Process.kill(:USR2, pid)
         # don't resuce Erro::ESRSH here (invalid status)
       end
     end
@@ -532,6 +545,14 @@ module Fluent
             $log.warn "flushing thread error: #{e}"
           end
         }.run
+      end
+
+      trap :USR2 do
+        $log.debug "fluentd main process get SIGUSR2"
+        $log.info "force dump in-memory configurations"
+        Thread.new {
+          $log.info @conf.to_s
+        }
       end
     end
 
