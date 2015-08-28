@@ -263,6 +263,12 @@ module Fluent
         supervisor_sighup_handler
         nil
       }
+      @rpc_server.mount_proc('/api/config.dump') { |req, res|
+        $log.debug "fluentd RPC got /api/config.dump request"
+        $log.info "dump in-memory config"
+        supervisor_sigusr2_handler
+        nil
+      }
     end
 
     def run_rpc_server
