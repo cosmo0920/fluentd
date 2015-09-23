@@ -5,7 +5,8 @@ install:
   - "%devkit%\\devkitvars.bat"
   - ruby --version
   - gem --version
-  - bundle install
+  - bundle install --retry=3
+
 build: off
 test_script:
   - bundle exec rake test
