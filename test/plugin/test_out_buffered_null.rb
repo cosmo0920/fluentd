@@ -1,5 +1,6 @@
 require_relative '../helper'
 require 'fluent/test'
+require 'fluent/plugin/out_buffered_null'
 
 class BufferedNullOutputTest < Test::Unit::TestCase
   def setup
