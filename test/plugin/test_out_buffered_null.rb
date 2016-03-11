@@ -22,7 +22,9 @@ class BufferedNullOutputTest < Test::Unit::TestCase
     d = create_driver
     time = Time.now
     d.run do
-      d.emit({'test' => 'test'}, Fluent::EventTime.from_time(time))
+      (1..10).each do
+        d.emit({'test' => 'test'}, Fluent::EventTime.from_time(time))
+      end
     end
 
     emits = d.emits
