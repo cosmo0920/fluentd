@@ -14,6 +14,8 @@
 #    limitations under the License.
 #
 
+require 'fluent/output'
+
 module Fluent
   class BufferedNullOutput < BufferedOutput
     Plugin.register_output('buffered_null', self)
