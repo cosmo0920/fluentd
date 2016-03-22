@@ -14,11 +14,6 @@ class BufferedNullOutputTest < Test::Unit::TestCase
     Fluent::Test::BufferedOutputTestDriver.new(Fluent::BufferedNullOutput).configure(conf)
   end
 
-  def test_create
-    d = create_driver
-    assert_equal Fluent::BufferedNullOutput, d.instance.class
-  end
-
   def test_write
     d = create_driver
     time = Time.now
