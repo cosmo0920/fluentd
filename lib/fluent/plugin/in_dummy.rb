@@ -58,17 +58,20 @@ module Fluent
     def configure(conf)
       super
 
-      unless @suspend
-        storage.autosave = false
-        storage.save_at_shutdown = false
+      if @suspend
+        @storage = storage_create(conf: conf, type: :local)
+        @storage.autosave = false
+        @storage.save_at_shutdown = false
       end
     end
 
     def start
       super
 
-      storage.put(:increment_value, 0) unless storage.get(:increment_value)
-      storage.put(:dummy_index, 0) unless storage.get(:dummy_index)
+      if @suspend
+        @storage.put(:increment_value, 0) unless @storage.get(:increment_value)
+        @storage.put(:dummy_index, 0) unless @storage.get(:dummy_index)
+      end
 
       @running = true
       @thread = Thread.new(&method(:run))
@@ -101,20 +104,20 @@ module Fluent
     end
 
     def generate
-      storage.synchronize do
-        index = storage.get(:dummy_index)
+      @storage.synchronize do
+        index = @storage.get(:dummy_index)
         d = @dummy[index]
         unless d
           index = 0
           d = @dummy[index]
         end
-        storage.put(:dummy_index, index + 1)
+        @storage.put(:dummy_index, index + 1)
 
         if @auto_increment_key
           d = d.dup
-          inc_value = storage.get(:increment_value)
+          inc_value = @storage.get(:increment_value)
           d[@auto_increment_key] = inc_value
-          storage.put(:increment_value, inc_value + 1)
+          @storage.put(:increment_value, inc_value + 1)
         end
 
         d
