@@ -123,7 +123,7 @@ class DummyTest < Test::Unit::TestCase
 
       assert !File.exist?(File.join(TEST_PLUGIN_STORAGE_PATH, 'json', 'test-01.json'))
 
-      d2 = create_driver(config1)
+      d2 = create_driver(conf1)
       d2.expected_emits_length = 4
       d2.run
 

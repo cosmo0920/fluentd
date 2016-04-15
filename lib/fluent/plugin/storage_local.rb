@@ -26,7 +26,7 @@ module Fluent
         super
 
         @on_memory = false
-        if !@path && !@_plugin_id_configured
+        if !@path || !@_plugin_id_configured
           if @autosave || @persistent
             raise Fluent::ConfigError, "Plugin @id or path for <storage> required to save data"
           else

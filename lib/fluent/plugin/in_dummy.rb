@@ -58,20 +58,25 @@ module Fluent
     def configure(conf)
       super
 
-      if @suspend
-        @storage = storage_create(conf: conf, type: :local)
-        @storage.autosave = false
-        @storage.save_at_shutdown = false
+      config = conf.elements.select{|e| e.name == 'storage' && e.arg == section.usage }.first
+      default_conf = {
+        '@type' => 'local',
+        'persistent' => false,
+        'autosave' => false,
+        'save_at_shutdown' => false,
+      }
+      if !config
+        @storage = storage_create(usage: 'suspend', conf: default_conf, type: :local)
+      else
+        @storage = storage_create(usage: 'suspend', conf: conf, type: :local)
       end
     end
 
     def start
       super
 
-      if @suspend
-        @storage.put(:increment_value, 0) unless @storage.get(:increment_value)
-        @storage.put(:dummy_index, 0) unless @storage.get(:dummy_index)
-      end
+      @storage.put(:increment_value, 0) unless @storage.get(:increment_value)
+      @storage.put(:dummy_index, 0) unless @storage.get(:dummy_index)
 
       @running = true
       @thread = Thread.new(&method(:run))
@@ -104,24 +109,22 @@ module Fluent
     end
 
     def generate
-      @storage.synchronize do
-        index = @storage.get(:dummy_index)
+      index = @storage.get(:dummy_index)
+      d = @dummy[index]
+      unless d
+        index = 0
         d = @dummy[index]
-        unless d
-          index = 0
-          d = @dummy[index]
-        end
-        @storage.put(:dummy_index, index + 1)
-
-        if @auto_increment_key
-          d = d.dup
-          inc_value = @storage.get(:increment_value)
-          d[@auto_increment_key] = inc_value
-          @storage.put(:increment_value, inc_value + 1)
-        end
-
-        d
       end
+      @storage.put(:dummy_index, index + 1)
+
+      if @auto_increment_key
+        d = d.dup
+        inc_value = @storage.get(:increment_value)
+        d[@auto_increment_key] = inc_value
+        @storage.put(:increment_value, inc_value + 1)
+      end
+
+      d
     end
 
     def wait(time)
