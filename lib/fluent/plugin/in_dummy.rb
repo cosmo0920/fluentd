@@ -65,17 +65,25 @@ module Fluent::Plugin
     def configure(conf)
       super
       @dummy_index = 0
-      unless @suspend
-        storage.autosave = false
-        storage.save_at_shutdown = false
+      config = conf.elements.select{|e| e.name == 'storage' }.first
+      default_conf = {
+        '@type' => 'local',
+        'persistent' => false,
+        'autosave' => false,
+        'save_at_shutdown' => false,
+      }
+      if !config
+        @storage = storage_create(usage: 'suspend', conf: default_conf, type: :local)
+      else
+        @storage = storage_create(usage: 'suspend', conf: config, type: :local)
       end
     end
 
     def start
       super
 
-      storage.put(:increment_value, 0) unless storage.get(:increment_value)
-      storage.put(:dummy_index, 0) unless storage.get(:dummy_index)
+      @storage.put(:increment_value, 0) unless @storage.get(:increment_value)
+      @storage.put(:dummy_index, 0) unless @storage.get(:dummy_index)
 
       @running = true
       @thread = Thread.new(&method(:run))
