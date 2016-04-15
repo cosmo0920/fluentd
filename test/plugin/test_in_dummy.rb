@@ -100,17 +100,18 @@ class DummyTest < Test::Unit::TestCase
   FileUtils.mkdir_p TEST_PLUGIN_STORAGE_PATH
 
   sub_test_case "doesn't suspend internal counters in default" do
-    config1 = %[
-      @id test-01
-      tag dummy
-      rate 10
-      dummy [{"x": 1, "y": "1"}, {"x": 2, "y": "2"}, {"x": 3, "y": "3"}]
-      auto_increment_key id
-    ]
+    config1 = {
+      '@id' => 'test-01',
+      'tag' => 'dummy',
+      'rate' => '2',
+      'dummy' => '[{"x": 1, "y": "1"}, {"x": 2, "y": "2"}, {"x": 3, "y": "3"}]',
+      'auto_increment_key' => 'id',
+    }
+    conf1 = config_element('ROOT', '', config1, [])
     test "value of auto increment key is not suspended after stop-and-start" do
       assert !File.exist?(File.join(TEST_PLUGIN_STORAGE_PATH, 'json', 'test-01.json'))
 
-      d1 = create_driver(config1)
+      d1 = create_driver(conf1)
       d1.expected_emits_length = 4
       d1.run
 
@@ -146,9 +147,13 @@ class DummyTest < Test::Unit::TestCase
       'auto_increment_key' => 'id',
       'suspend' => true
     }
-    conf2 = config_element('ROOT', config2, {}, [
-                            config_element('storage', '', {'@type' => 'local'})
-                          ])
+    conf2 = config_element('ROOT', '', config2, [
+              config_element(
+                'storage', '',
+                {'@type' => 'local',
+                 'path' => File.join(TEST_PLUGIN_STORAGE_PATH,
+                                     'json', 'test-02.json')})
+            ])
     test "value of auto increment key is suspended after stop-and-start" do
       assert !File.exist?(File.join(TEST_PLUGIN_STORAGE_PATH, 'json', 'test-02.json'))
 
