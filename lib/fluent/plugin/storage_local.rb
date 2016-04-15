@@ -42,7 +42,7 @@ module Fluent
         else # @_plugin_id_configured is true
           raise NotImplementedError, "implement this feature later with system_config"
           ## TODO: get process-wide directory for plugin storage, and generate path for this plugin storage instance
-          # path = 
+          # path =
         end
 
         if !@on_memory
@@ -58,7 +58,7 @@ module Fluent
               raise Fluent::ConfigError, "Unexpected error: failed to read data from plugin storage file: '#{@path}'"
             end
           else
-            raise Fluent::ConfigError, "Directory is not writable for plugin storage file '#{@path}'" unless File.writable?(@path)
+            raise Fluent::ConfigError, "Directory is not writable for plugin storage file '#{dir}'" unless File.writable?(dir)
           end
         end
       end
