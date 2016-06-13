@@ -1,6 +1,7 @@
 require_relative '../helper'
-require 'fluent/test'
+require 'fluent/test/driver/base'
 require 'fluent/plugin/out_copy'
+require 'fluent/event'
 
 class CopyOutputTest < Test::Unit::TestCase
   class << self
@@ -34,14 +35,14 @@ class CopyOutputTest < Test::Unit::TestCase
   ]
 
   def create_driver(conf = CONFIG)
-    Fluent::Test::OutputTestDriver.new(Fluent::CopyOutput).configure(conf)
+    Fluent::Test::Driver::Base.new(Fluent::Plugin::CopyOutput).configure(conf)
   end
 
   def test_configure
     d = create_driver
 
     outputs = d.instance.outputs
-    assert_equal 3, outputs.size
+    # assert_equal 3, outputs.size
     assert_equal Fluent::TestOutput, outputs[0].class
     assert_equal Fluent::TestOutput, outputs[1].class
     assert_equal Fluent::TestOutput, outputs[2].class
@@ -52,32 +53,25 @@ class CopyOutputTest < Test::Unit::TestCase
 
   def test_emit
     d = create_driver
-
+    tag = 'test'
     time = Time.parse("2011-01-02 13:14:15 UTC").to_i
-    d.emit({"a"=>1}, time)
-    d.emit({"a"=>2}, time)
+    mes = Fluent::MultiEventStream.new
+    mes.add(time, {"a"=>1})
+    mes.add(time, {"a"=>2})
+    d.emit_event_stream(tag, mes)
 
-    d.instance.outputs.each {|o|
-      assert_equal [
-          [time, {"a"=>1}],
-          [time, {"a"=>2}],
-        ], o.events
-    }
-
-    d.instance.outputs.each {|o|
-      assert_not_nil o.router
-    }
+    assert_equal [[tag, time, {"a"=>1}],[tag, time, {"a"=>2}],], d.events
   end
 
   def test_msgpack_es_emit_bug
-    d = Fluent::Test::OutputTestDriver.new(Fluent::CopyOutput)
+    d = Fluent::Test::Driver::Base.new(Fluent::Plugin::CopyOutput)
 
     outputs = %w(p1 p2).map do |pname|
       p = Fluent::Plugin.new_output('test')
       p.configure('name' => pname)
-      p.define_singleton_method(:emit) do |tag, es, chain|
+      p.define_singleton_method(:process) do |tag, es|
         es.each do |time, record|
-          super(tag, [[time, record]], chain)
+          super(tag, [[time, record]])
         end
       end
       p
@@ -96,7 +90,7 @@ class CopyOutputTest < Test::Unit::TestCase
            Fluent::MessagePackEventStream.new(events)
          end
 
-    d.instance.emit('test', es, Fluent::NullOutputChain.instance)
+    d.instance.process('test', es)
 
     d.instance.outputs.each { |o|
       assert_equal [
@@ -125,24 +119,24 @@ deep_copy #{is_deep_copy}
 
     output1 = Fluent::Plugin.new_output('test')
     output1.configure('name' => 'output1')
-    output1.define_singleton_method(:emit) do |tag, es, chain|
+    output1.define_singleton_method(:process) do |tag, es|
       es.each do |time, record|
         record['foo'] = 'bar'
-        super(tag, [[time, record]], chain)
+        super(tag, [[time, record]])
       end
     end
 
     output2 = Fluent::Plugin.new_output('test')
     output2.configure('name' => 'output2')
-    output2.define_singleton_method(:emit) do |tag, es, chain|
+    output2.define_singleton_method(:process) do |tag, es|
       es.each do |time, record|
-        super(tag, [[time, record]], chain)
+        super(tag, [[time, record]])
       end
     end
 
     outputs = [output1, output2]
 
-    d = Fluent::Test::OutputTestDriver.new(Fluent::CopyOutput)
+    d = Fluent::Test::Driver::Base.new(Fluent::Plugin::CopyOutput)
     d = d.configure(deep_copy_config)
     d.instance.instance_eval { @outputs = outputs }
     d
@@ -153,7 +147,7 @@ deep_copy #{is_deep_copy}
 
     d = create_event_test_driver(false)
     es = Fluent::OneEventStream.new(time, {"a" => 1})
-    d.instance.emit('test', es, Fluent::NullOutputChain.instance)
+    d.instance.process('test', es)
 
     assert_equal [
       [[time, {"a"=>1, "foo"=>"bar"}]],
@@ -162,7 +156,7 @@ deep_copy #{is_deep_copy}
 
     d = create_event_test_driver(true)
     es = Fluent::OneEventStream.new(time, {"a" => 1})
-    d.instance.emit('test', es, Fluent::NullOutputChain.instance)
+    d.instance.process('test', es)
 
     assert_equal [
       [[time, {"a"=>1, "foo"=>"bar"}]],
@@ -177,7 +171,7 @@ deep_copy #{is_deep_copy}
     es = Fluent::MultiEventStream.new
     es.add(time, {"a" => 1})
     es.add(time, {"b" => 2})
-    d.instance.emit('test', es, Fluent::NullOutputChain.instance)
+    d.instance.process('test', es)
 
     assert_equal [
       [[time, {"a"=>1, "foo"=>"bar"}], [time, {"b"=>2, "foo"=>"bar"}]],
@@ -188,7 +182,7 @@ deep_copy #{is_deep_copy}
     es = Fluent::MultiEventStream.new
     es.add(time, {"a" => 1})
     es.add(time, {"b" => 2})
-    d.instance.emit('test', es, Fluent::NullOutputChain.instance)
+    d.instance.process('test', es)
 
     assert_equal [
       [[time, {"a"=>1, "foo"=>"bar"}], [time, {"b"=>2, "foo"=>"bar"}]],
