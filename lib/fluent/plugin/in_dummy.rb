@@ -59,24 +59,13 @@ module Fluent::Plugin
 
     def initialize
       super
-      @storage = nil
     end
 
     def configure(conf)
       super
       @dummy_index = 0
       config = conf.elements.select{|e| e.name == 'storage' }.first
-      default_conf = {
-        '@type' => 'local',
-        'persistent' => false,
-        'autosave' => false,
-        'save_at_shutdown' => false,
-      }
-      if !config
-        @storage = storage_create(usage: 'suspend', conf: default_conf, type: :local)
-      else
-        @storage = storage_create(usage: 'suspend', conf: config, type: :local)
-      end
+      @storage = storage_create(usage: 'suspend', conf: config, type: :local)
     end
 
     def start
@@ -121,25 +110,19 @@ module Fluent::Plugin
     end
 
     def generate
-      storage.synchronize do
+      @storage.synchronize do
         d = @dummy[@dummy_index]
         unless d
           @dummy_index = 0
-          d = @dummy[0]
+          d = @dummy[@dummy_index]
         end
         @dummy_index += 1
         if @auto_increment_key
           d = d.dup
           d[@auto_increment_key] = @storage.update(:auto_increment_value){|v| v + 1 }
-
-          if @auto_increment_key
-            d = d.dup
-            inc_value = storage.get(:increment_value)
-            d[@auto_increment_key] = inc_value
-            storage.put(:increment_value, inc_value + 1)
-          end
-          d
         end
+
+        d
       end
     end
 

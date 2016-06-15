@@ -108,22 +108,20 @@ class DummyTest < Test::Unit::TestCase
       assert !File.exist?(File.join(TEST_PLUGIN_STORAGE_PATH, 'json', 'test-01.json'))
 
       d1 = create_driver(conf1)
-      d1.expected_emits_length = 4
-      d1.run
+      d1.run(expect_emits: 4, timeout: 1)
 
-      first_id1 = d1.emits.first[2]['id']
+      first_id1 = d1.instance.events.first[2]['id']
       assert_equal 0, first_id1
 
-      last_id1 = d1.emits.last[2]['id']
+      last_id1 = d1.events.last[2]['id']
       assert { last_id1 > 0 }
 
       assert !File.exist?(File.join(TEST_PLUGIN_STORAGE_PATH, 'json', 'test-01.json'))
 
       d2 = create_driver(conf1)
-      d2.expected_emits_length = 4
-      d2.run
+      d2.run(expect_emits: 4, timeout: 1)
 
-      first_id2 = d2.emits.first[2]['id']
+      first_id2 = d2.events.first[2]['id']
       assert_equal 0, first_id2
 
       assert !File.exist?(File.join(TEST_PLUGIN_STORAGE_PATH, 'json', 'test-01.json'))
@@ -159,23 +157,20 @@ class DummyTest < Test::Unit::TestCase
       assert !File.exist?(File.join(TEST_PLUGIN_STORAGE_PATH, 'json', 'test-02.json'))
 
       d1 = create_driver(conf2)
+      d1.run(expect_emits: 4, timeout: 1)
 
-      d1.expected_emits_length = 4
-      d1.run
-
-      first_id1 = d1.emits.first[2]['id']
+      first_id1 = d1.events.first[2]['id']
       assert_equal 0, first_id1
 
-      last_id1 = d1.emits.last[2]['id']
+      last_id1 = d1.events.last[2]['id']
       assert { last_id1 > 0 }
 
       assert File.exist?(File.join(TEST_PLUGIN_STORAGE_PATH, 'json', 'test-02.json'))
 
       d2 = create_driver(conf2)
-      d2.expected_emits_length = 4
-      d2.run
+      d2.run(expect_emits: 4, timeout: 1)
 
-      first_id2 = d2.emits.first[2]['id']
+      first_id2 = d2.events.first[2]['id']
       assert_equal last_id1 + 1, first_id2
 
       assert File.exist?(File.join(TEST_PLUGIN_STORAGE_PATH, 'json', 'test-02.json'))
