@@ -15,12 +15,12 @@ test_script:
   - bundle exec rake test
 #  - bundle exec rake test TESTOPTS=-v
 
-branches:
-  only:
-    - master
-    - v0.10
-    - v0.12
-    - v0.14
+# branches:
+#   only:
+    # - master
+    # - v0.10
+    # - v0.12
+    # - v0.14
 
 # https://www.appveyor.com/docs/installed-software/#ruby
 environment:
