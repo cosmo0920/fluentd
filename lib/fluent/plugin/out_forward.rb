@@ -107,6 +107,10 @@ module Fluent::Plugin
     config_param :tls_client_private_key_path, :string, default: nil
     desc 'The client private key passphrase for TLS.'
     config_param :tls_client_private_key_passphrase, :string, default: nil, secret: true
+    desc 'The certificate thumbprint for searching from Windows system certstore.'
+    config_param :tls_certificate_thumbprint, :string, default: nil, secret: true
+    desc 'The certificate logical store name on Windows system certstore.'
+    config_param :tls_certificate_logical_store_name, :string, default: nil
     desc "Enable keepalive connection."
     config_param :keepalive, :bool, default: false
     desc "Expired time of keepalive. Default value is nil, which means to keep connection as long as possible"
@@ -346,6 +350,8 @@ module Fluent::Plugin
           cert_path: @tls_client_cert_path,
           private_key_path: @tls_client_private_key_path,
           private_key_passphrase: @tls_client_private_key_passphrase,
+          cert_thumbprint: @tls_certificate_thumbprint,
+          cert_logical_store_name: @tls_certificate_logical_store_name,
 
           # Enabling SO_LINGER causes data loss on Windows
           # https://github.com/fluent/fluentd/issues/1968
