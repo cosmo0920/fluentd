@@ -119,8 +119,14 @@ module Fluent
             if enable_system_cert_store
               if Fluent.windows? && cert_logical_store_name
                 loader = Win32::CertstoreLoader.new(log, cert_store, cert_logical_store_name)
-                loader.load_cert_store
-                cert_store = loader.cert_store
+                # CertstoreLoader#load_cert_store is doing heavy operation.
+                # The result should be cached.
+                if @_cert_store.nil?
+                  loader.load_cert_store
+                  @_cert_store = cert_store = loader.cert_store
+                else
+                  cert_store = @_cert_store
+                end
                 context.cert = loader.get_certificate(cert_thumbprint) if cert_thumbprint
               end
               log.trace "loading system default certificate store"
