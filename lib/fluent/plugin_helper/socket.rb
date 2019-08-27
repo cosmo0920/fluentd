@@ -18,7 +18,7 @@ require 'socket'
 require 'ipaddr'
 require 'openssl'
 if Fluent.windows?
-  require 'fluent/win_certstore_loader'
+  require 'fluent/certstore_loader'
 end
 
 require_relative 'socket_option'
@@ -118,7 +118,7 @@ module Fluent
           begin
             if enable_system_cert_store
               if Fluent.windows? && cert_logical_store_name
-                loader = Win32::CertstoreLoader.new(log, cert_store, cert_logical_store_name)
+                loader = Fluent::CertstoreLoader.new(log, cert_store, cert_logical_store_name)
                 # CertstoreLoader#load_cert_store is doing heavy operation.
                 # The result should be cached.
                 if @_cert_store.nil?
