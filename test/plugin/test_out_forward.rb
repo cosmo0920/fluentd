@@ -186,8 +186,22 @@ EOL
   end
 
   sub_test_case "certstore loading parameters for Windows" do
-    setup do
-      omit "Loading CertStore feature works only Windows" unless Fluent.windows?
+    test 'Certstore related config parameters' do
+      omit "Certstore related values raise error on not Windows" if Fluent.windows?
+      conf = %[
+        send_timeout 5
+        transport tls
+        tls_certificate_logical_store_name Root
+        tls_certificate_thumbprint a909502dd82ae41433e6f83886b00d4277a32a7b
+        <server>
+          host #{TARGET_HOST}
+          port #{TARGET_PORT}
+        </server>
+      ]
+
+      assert_raise(Fluent::ConfigError) do
+        create_driver(conf)
+      end
     end
 
     test 'certificate_logical_store_name and tls_certificate_thumbprint default values' do
@@ -206,6 +220,7 @@ EOL
     end
 
     test 'configure certificate_logical_store_name and tls_certificate_thumbprint' do
+      omit "Loading CertStore feature works only Windows" unless Fluent.windows?
       conf = %[
         send_timeout 5
         transport tls

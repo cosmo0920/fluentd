@@ -202,6 +202,13 @@ module Fluent::Plugin
           @tls_verify_hostname = false
           @tls_allow_self_signed_cert = true
         end
+
+        if Fluent.windows?
+          raise Fluent::ConfigError, "specified both tls_cert_path and tls_certificate_logical_store_name is not permitted" if @tls_cert_path && @tls_certificate_logical_store_name
+        else
+          raise Fluent::ConfigError, "This parameter is for only Windows" if @tls_certificate_logical_store_name
+          raise Fluent::ConfigError, "THis parameter is for only Windows" if @tls_certificate_thumbprint
+        end
       end
 
       @ack_handler = @require_ack_response ? AckHandler.new(timeout: @ack_response_timeout, log: @log, read_length: @read_length) : nil
