@@ -15,9 +15,9 @@ test_script:
   - bundle exec rake test
 #  - bundle exec rake test TESTOPTS=-v
 
-branches:
-  only:
-    - master
+# branches:
+#   only:
+#     - master
 
 # https://www.appveyor.com/docs/installed-software/#ruby
 environment:
