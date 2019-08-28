@@ -186,8 +186,8 @@ EOL
   end
 
   sub_test_case "certstore loading parameters for Windows" do
-    test 'Certstore related config parameters' do
-      omit "Certstore related values raise error on not Windows" if Fluent.windows?
+    test 'certstore related config parameters' do
+      omit "certstore related values raise error on not Windows" if Fluent.windows?
       conf = %[
         send_timeout 5
         transport tls
@@ -217,6 +217,28 @@ EOL
       @d = d = create_driver(conf)
       assert_nil d.instance.tls_certificate_logical_store_name
       assert_nil d.instance.tls_certificate_thumbprint
+    end
+
+    data('CA cert'     => 'tls_ca_cert_path',
+         'non CA cert' => 'tls_cert_path')
+    test 'specify tls_certificate_logical_store_name and tls_cert_path should raise error' do |param|
+      omit "Loading CertStore feature works only Windows" unless Fluent.windows?
+      dummy_cert_path = File.join(TMP_DIR, "dummy_cert.pem")
+      FileUtils.touch(dummy_cert_path)
+      conf = %[
+        send_timeout 5
+        transport tls
+        #{param} #{dummy_cert_path}
+        tls_certificate_logical_store_name Root
+        <server>
+          host #{TARGET_HOST}
+          port #{TARGET_PORT}
+        </server>
+      ]
+
+      assert_raise(Fluent::ConfigError) do
+        create_driver(conf)
+      end
     end
 
     test 'configure certificate_logical_store_name and tls_certificate_thumbprint' do

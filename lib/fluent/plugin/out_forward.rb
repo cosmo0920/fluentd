@@ -204,7 +204,9 @@ module Fluent::Plugin
         end
 
         if Fluent.windows?
-          raise Fluent::ConfigError, "specified both tls_cert_path and tls_certificate_logical_store_name is not permitted" if @tls_cert_path && @tls_certificate_logical_store_name
+          if (@tls_cert_path || @tls_ca_cert_path) && @tls_certificate_logical_store_name
+            raise Fluent::ConfigError, "specified both cert path and tls_certificate_logical_store_name is not permitted"
+          end
         else
           raise Fluent::ConfigError, "This parameter is for only Windows" if @tls_certificate_logical_store_name
           raise Fluent::ConfigError, "THis parameter is for only Windows" if @tls_certificate_thumbprint
