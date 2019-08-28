@@ -185,6 +185,44 @@ EOL
     assert_equal([dummy_cert_path], d.instance.tls_ca_cert_path)
   end
 
+  sub_test_case "certstore loading parameters for Windows" do
+    setup do
+      omit "Loading CertStore feature works only Windows" unless Fluent.windows?
+    end
+
+    test 'certificate_logical_store_name and tls_certificate_thumbprint default values' do
+      conf = %[
+        send_timeout 5
+        transport tls
+        <server>
+          host #{TARGET_HOST}
+          port #{TARGET_PORT}
+        </server>
+      ]
+
+      @d = d = create_driver(conf)
+      assert_nil d.instance.tls_certificate_logical_store_name
+      assert_nil d.instance.tls_certificate_thumbprint
+    end
+
+    test 'configure certificate_logical_store_name and tls_certificate_thumbprint' do
+      conf = %[
+        send_timeout 5
+        transport tls
+        tls_certificate_logical_store_name Root
+        tls_certificate_thumbprint a909502dd82ae41433e6f83886b00d4277a32a7b
+        <server>
+          host #{TARGET_HOST}
+          port #{TARGET_PORT}
+        </server>
+      ]
+
+      @d = d = create_driver(conf)
+      assert_equal "Root", d.instance.tls_certificate_logical_store_name
+      assert_equal "a909502dd82ae41433e6f83886b00d4277a32a7b", d.instance.tls_certificate_thumbprint
+    end
+  end
+
   test 'compress_default_value' do
     @d = d = create_driver
     assert_equal :text, d.instance.compress
