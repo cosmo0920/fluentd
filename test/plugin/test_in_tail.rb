@@ -1054,13 +1054,13 @@ class TailInputTest < Test::Unit::TestCase
       plugin = create_driver(EX_CONFIG, false).instance
       flexstub(Time) do |timeclass|
         timeclass.should_receive(:now).with_no_args.and_return(Time.new(2010, 1, 2, 3, 4, 5))
-        assert_equal EX_PATHS, plugin.expand_paths.values.sort_by { |path_ino| path_ino.path }
+        assert_equal ex_paths, plugin.expand_paths.values.sort_by { |path_ino| path_ino.path }
       end
 
       # Test exclusion
-      exclude_config = EX_CONFIG + config_element("", "", { "exclude_path" => %Q(["#{EX_PATHS.last.path}"]) })
+      exclude_config = EX_CONFIG + config_element("", "", { "exclude_path" => %Q(["#{ex_paths.last.path}"]) })
       plugin = create_driver(exclude_config, false).instance
-      assert_equal EX_PATHS - [EX_PATHS.last], plugin.expand_paths.values.sort_by { |path_ino| path_ino.path }
+      assert_equal ex_paths - [ex_paths.last], plugin.expand_paths.values.sort_by { |path_ino| path_ino.path }
     end
 
     def test_expand_paths_with_duplicate_configuration
@@ -1075,6 +1075,11 @@ class TailInputTest < Test::Unit::TestCase
     end
 
     def test_expand_paths_with_timezone
+      ex_paths = [
+        path_to_tuple('test/plugin/data/2010/01/20100102-030405.log'),
+        path_to_tuple('test/plugin/data/log/foo/bar.log'),
+        path_to_tuple('test/plugin/data/log/test.log')
+      ]
       ['Asia/Taipei', '+08'].each do |tz_type|
         taipei_config = EX_CONFIG + config_element("", "", {"path_timezone" => tz_type})
         plugin = create_driver(taipei_config, false).instance
@@ -1088,8 +1093,8 @@ class TailInputTest < Test::Unit::TestCase
             # env : 2010-01-01 19:04:05 (UTC), tail path : 2010-01-02 03:04:05 (Asia/Taipei)
             timeclass.should_receive(:now).with_no_args.and_return(Time.new(2010, 1, 1, 19, 4, 5))
 
-            assert_equal EX_PATHS, plugin.expand_paths.sort
-            assert_equal EX_PATHS - [EX_PATHS.first], exclude_plugin.expand_paths.sort
+            assert_equal ex_paths, plugin.expand_paths.values.sort_by { |path_ino| path_ino.path }
+            assert_equal ex_paths - [ex_paths.first], exclude_plugin.expand_paths.values.sort_by { |path_ino| path_ino.path }
           end
         end
       end
