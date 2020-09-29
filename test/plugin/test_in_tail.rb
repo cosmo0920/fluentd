@@ -1245,7 +1245,7 @@ class TailInputTest < Test::Unit::TestCase
     plugin = create_driver(EX_CONFIG, false).instance
     sio = StringIO.new
     plugin.instance_eval do
-      @pf = Fluent::Plugin::TailInput::PositionFile.load(sio, logger: $log)
+      @pf = Fluent::Plugin::TailInput::PositionFile.load(sio, EX_FOLLOW_INODES, logger: $log)
       @loop = Coolio::Loop.new
     end
 
