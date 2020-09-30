@@ -1642,7 +1642,7 @@ class TailInputTest < Test::Unit::TestCase
       Timecop.travel(now + 10) do
         sleep 3
         d.instance.instance_eval do
-          @tails[path_ino] == nil
+          @tails[path_ino.path] == nil
         end
       end
       d.instance_shutdown
