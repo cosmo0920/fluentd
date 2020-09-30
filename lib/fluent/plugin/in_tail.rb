@@ -446,7 +446,7 @@ module Fluent::Plugin
         end
       end
 
-      @tails[path] = setup_watcher(path, pe)
+      @tails[path] = setup_watcher(path, ino, pe)
       tuple = PathInodeTuple.new(path, pe.read_inode)
       detach_watcher_after_rotate_wait(rotated_tw) if rotated_tw
       rotated_tw = @tails[tuple]
