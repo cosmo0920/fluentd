@@ -414,7 +414,19 @@ module Fluent::Plugin
 
     def stop_watchers(paths, immediate: false, unwatched: false, remove_watcher: true)
       paths.each { |path|
-        tw = remove_watcher ? @tails.delete(path) : @tails[path]
+        if remove_watcher
+          if @follow_inodes
+            tw = @tails.delete(path.ino)
+          else
+            tw = @tails.delete[path.path]
+          end
+        else
+          if @follow_inodes
+            tw = @tails[path.ino]
+          else
+            tw = @tails[path.path]
+          end
+        end
         if tw
           tw.unwatched = unwatched
           if immediate
