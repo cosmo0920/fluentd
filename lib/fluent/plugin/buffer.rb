@@ -583,7 +583,7 @@ module Fluent
       # 4. go to step_by_step writing
 
       def write_once(metadata, data, format: nil, size: nil, &block)
-        return if data.empty?
+        return if data.nil? || data.empty?
 
         stored = false
         adding_bytesize = nil
