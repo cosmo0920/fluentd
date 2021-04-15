@@ -22,6 +22,7 @@ require 'fluent/plugin/output'
 require 'fluent/config/error'
 # TODO remove ...
 require 'fluent/plugin/file_util'
+require 'fluent/capability'
 
 module Fluent::Plugin
   class FileOutput < Output
@@ -102,6 +103,10 @@ module Fluent::Plugin
       end
     end
 
+    def have_write_capability?
+      @capability.have_capability?(:effective, :dac_override)
+    end
+
     def configure(conf)
       compat_parameters_convert(conf, :formatter, :buffer, :inject, default_chunk_key: "time")
 
@@ -139,6 +144,7 @@ module Fluent::Plugin
                        nil
                      end
       @path_template = generate_path_template(@path, path_timekey, @append, @compress_method, path_suffix: path_suffix, time_slice_format: configured_time_slice_format)
+      @capability = Fluent::Capability.new(:current_process)
 
       if @as_secondary
         # When this plugin is configured as secondary & primary plugin has tag key, but this plugin may not have it.
@@ -157,7 +163,7 @@ module Fluent::Plugin
 
         test_chunk1 = chunk_for_test(dummy_tag, Fluent::EventTime.now, dummy_record)
         test_path = extract_placeholders(@path_template, test_chunk1)
-        unless ::Fluent::FileUtil.writable_p?(test_path)
+        unless !have_write_capability? || !(::Fluent::FileUtil.writable_p?(test_path))
           raise Fluent::ConfigError, "out_file: `#{test_path}` is not writable"
         end
       end

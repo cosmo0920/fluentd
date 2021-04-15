@@ -18,6 +18,7 @@ require "fileutils"
 require "fluent/plugin/file_util"
 require "fluent/plugin/output"
 require "fluent/config/error"
+require 'fluent/capability'
 
 module Fluent::Plugin
   class SecondaryFileOutput < Output
@@ -32,6 +33,10 @@ module Fluent::Plugin
     desc "The flushed chunk is appended to existence file or not."
     config_param :append, :bool, default: false
     config_param :compress, :enum, list: [:text, :gzip], default: :text
+
+    def have_write_capability?
+      @capability.have_capability?(:effective, :dac_override)
+    end
 
     def configure(conf)
       super
@@ -55,7 +60,9 @@ module Fluent::Plugin
                 end
 
       test_path = @path_without_suffix
-      unless Fluent::FileUtil.writable_p?(test_path)
+      @capability = Fluent::Capability.new(:current_process)
+
+      unless !have_write_capability? || !Fluent::FileUtil.writable_p?(test_path)
         raise Fluent::ConfigError, "out_secondary_file: `#{@directory}` should be writable"
       end
 
