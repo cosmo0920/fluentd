@@ -985,6 +985,8 @@ module Fluent::Plugin
           @log = log
 
           @log.info "following tail of #{@path}"
+          @read_more = false
+          install_signal_handlers
         end
 
         def on_notify
@@ -1015,12 +1017,24 @@ module Fluent::Plugin
           end
         end
 
+        def install_signal_handlers
+          trap :INT do
+            @log.debug "in_tail got SIGINT"
+            @read_more = false
+          end
+
+          trap :TERM do
+            @log.debug "in_tail got SIGTERM"
+            @read_more = false
+          end
+        end
+
         def handle_notify
           with_io do |io|
             begin
               number_bytes_read = 0
               start_reading = Fluent::Clock.now
-              read_more = false
+              @read_more = false
 
               if !io.nil? && @lines.empty?
                 begin
@@ -1034,7 +1048,7 @@ module Fluent::Plugin
                     @log.debug("reading file: #{@path}")
                     if @lines.size >= @read_lines_limit || limit_bytes_per_second_reached
                       # not to use too much memory in case the file is very large
-                      read_more = true
+                      @read_more = true
 
                       sleep_for_log_ingestion(start_reading) if limit_bytes_per_second_reached
 
@@ -1050,10 +1064,10 @@ module Fluent::Plugin
                   @watcher.pe.update_pos(io.pos - @fifo.bytesize)
                   @lines.clear
                 else
-                  read_more = false
+                  @read_more = false
                 end
               end
-            end while read_more
+            end while @read_more
           end
         end
 
