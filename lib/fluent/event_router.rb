@@ -47,10 +47,14 @@ module Fluent
       @match_cache = MatchCache.new
       @default_collector = default_collector
       @emit_error_handler = emit_error_handler
+      @metric = nil
+      @counter_scopes = []
     end
 
     attr_accessor :default_collector
     attr_accessor :emit_error_handler
+    attr_reader :counter_scopes
+    attr_reader :metric
 
     class Rule
       def initialize(pattern, collector)
@@ -70,6 +74,99 @@ module Fluent
 
       attr_reader :collector
       attr_reader :pattern_str
+    end
+
+    class MeasureRouterMetric
+      require 'fluent/counter/client'
+      require 'fluent/system_config'
+
+      include Fluent::SystemConfig::Mixin
+
+      attr_reader :_counter_clients
+
+      def initialize
+        @_counter_clients = {}
+        @client_conf = system_config.counter_client
+      end
+
+      def init(scope:, loop: Coolio::Loop.new)
+        if @client_conf
+          raise Fluent::ConfigError, '<counter_client> is required in <system>' unless @client_conf
+          counter_client = Fluent::Counter::Client.new(loop, port: @client_conf.port, host: @client_conf.host, timeout: @client_conf.timeout)
+          counter_client.start
+          counter_client.establish(scope)
+          @_counter_clients[scope] = counter_client
+          counter_client
+        end
+      end
+
+      def avaliable?
+        !!@client_conf
+      end
+
+      def enabled?
+        !@_counter_clients.empty?
+      end
+
+      def client(scope)
+        @_counter_clients[scope]
+      end
+
+      def stop
+        @_counter_clients.each do |_key, client|
+          client.stop
+        end
+      end
+
+      def terminate
+        @_counter_clients.each do |_key, client|
+          client = nil
+        end
+        @_counter_clients.clear
+      end
+    end
+
+    def metric_scope(collector)
+      if collector.plugin_id_configured?
+        collector.plugin_id
+      else
+        "anonymous"
+      end
+    end
+
+    def setup_metric_counter
+      @metric ||= MeasureRouterMetric.new
+      return unless @metric.avaliable?
+      @buffer = MessagePack::Buffer.new
+
+      @match_rules.each do |rule|
+        scope = metric_scope(rule.collector)
+        @counter_scopes << scope
+        @counter_scopes.uniq!
+        @counter_scopes.each do |counter_scope|
+          @metric.init(scope: counter_scope)
+          if @metric.enabled?
+            @metric.client(counter_scope).init([
+                                                {name: "#{counter_scope}_route_count", type: 'numeric', reset_interval: 0},
+                                                {name: "#{counter_scope}_route_size", type: 'numeric', reset_interval: 0}
+                                              ])
+          end
+        end
+      end
+    end
+
+    def teardown_metric_counter
+      if @metric.enabled?
+        @metric.stop
+        @metric.terminate
+      end
+    end
+
+    def event_size(es)
+      @buffer << es.to_msgpack_stream
+      size = @buffer.size
+      @buffer.clear
+      size
     end
 
     def suppress_missing_match!
@@ -95,6 +192,11 @@ module Fluent
 
     def emit_stream(tag, es)
       match(tag).emit_events(tag, es)
+      if @metric.enabled?
+        scope = metric_scope(match(tag))
+        @metric.client(scope).inc([{name: "#{scope}_route_count", value: es.size}])
+        @metric.client(scope).inc([{name: "#{scope}_route_size", value: event_size(es)}])
+      end
     rescue => e
       @emit_error_handler.handle_emits_error(tag, es, e)
     end

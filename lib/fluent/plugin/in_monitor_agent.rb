@@ -316,6 +316,8 @@ module Fluent::Plugin
       obj['plugin_category'] = plugin_category(pe)
       obj['type'] = pe.config['@type']
       obj['config'] = pe.config if opts[:with_config]
+      has_counter_scope = Fluent::Engine.root_agent.event_router.counter_scopes.include?(pe.plugin_id)
+      obj['ingest_counter'] = has_counter_scope
 
       # run MONITOR_INFO in plugins' instance context and store the info to obj
       MONITOR_INFO.each_pair {|key,code|
@@ -336,6 +338,10 @@ module Fluent::Plugin
 
       if pe.respond_to?(:statistics)
         obj.merge!(pe.statistics['output'] || {})
+      end
+
+      if has_counter_scope
+        obj["ingest"] = get_ingest_info(pe.plugin_id)
       end
 
       obj['retry'] = get_retry_info(pe.retry) if opts[:with_retry] && pe.instance_variable_defined?(:@retry)
@@ -361,6 +367,16 @@ module Fluent::Plugin
       end
 
       obj
+    end
+
+    def get_ingest_info(plugin_id)
+      ingest_variables = {}
+      metric = Fluent::Engine.root_agent.event_router.metric
+
+      ingest_variables["count"] = metric.client(plugin_id).get("#{plugin_id}_route_count").data.first["current"]
+      ingest_variables["size"]  = metric.client(plugin_id).get("#{plugin_id}_route_size").data.first["current"]
+
+      ingest_variables
     end
 
     RETRY_INFO = {

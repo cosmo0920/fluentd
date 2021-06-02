@@ -74,7 +74,13 @@ module Fluent
         @router = event_emitter_router(conf['@label'])
       end
 
+      def start
+        super
+        @router.setup_metric_counter
+      end
+
       def after_shutdown
+        @router.teardown_metric_counter
         @router = nil
         super
       end
