@@ -28,7 +28,7 @@ module Fluent
       :without_source, :rpc_endpoint, :enable_get_dump, :process_name,
       :file_permission, :dir_permission, :counter_server, :counter_client,
       :strict_config_value, :enable_msgpack_time_support, :disable_shared_socket,
-      :enable_input_metrics
+      :enable_input_metrics, :metrics
     ]
 
     config_param :workers,   :integer, default: 1
@@ -93,6 +93,11 @@ module Fluent
       config_param :host, :string
       desc 'the timeout of each operation'
       config_param :timeout, :time, default: nil
+    end
+
+    config_section :metrics, multi: false do
+      config_param :@type, :string, default: "local"
+      config_param :labels, :hash, default: {}
     end
 
     def self.create(conf, strict_config_value=false)

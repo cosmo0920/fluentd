@@ -336,6 +336,8 @@ module Fluent::Plugin
 
       if pe.respond_to?(:statistics)
         obj.merge!(pe.statistics.dig('output') || {})
+        obj.merge!(pe.statistics.dig('multi_output') || {})
+        obj.merge!(pe.statistics.dig('bare_output') || {})
         obj.merge!(pe.statistics.dig('filter') || {})
         obj.merge!(pe.statistics.dig('input') || {})
       end
