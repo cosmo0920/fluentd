@@ -27,19 +27,19 @@ module Fluent
       include PluginLoggerMixin
       include PluginHelper::Mixin
 
-      helpers_internal :event_emitter
+      helpers_internal :event_emitter, :metrics
 
       def initialize
         super
-        @emit_records = 0
-        @emit_size = 0
+        @emit_records_metrics = metrics_create(namespace: "Fluentd", subsystem: "input", name: "emit_records", help_text: "Number of count emit records")
+        @emit_size_metrics =  metrics_create(namespace: "Fluentd", subsystem: "input", name: "emit_size", help_text: "Total size of emit events")
         @counter_mutex = Mutex.new
       end
 
       def statistics
         stats = {
-          'emit_records' => @emit_records,
-          'emit_size' => @emit_size,
+          'emit_records' => @emit_records_metrics.get(self.plugin_id),
+          'emit_size' => @emit_size_metrics.get(self.plugin_id),
         }
 
         { 'input' => stats }
@@ -47,8 +47,8 @@ module Fluent
 
       def metric_callback(es)
         @counter_mutex.synchronize do
-          @emit_records += es.size
-          @emit_size += es.to_msgpack_stream.bytesize
+          @emit_records_metrics.add(self.plugin_id, es.size)
+          @emit_size_metrics.add(self.plugin_id, es.to_msgpack_stream.bytesize)
         end
       end
 
