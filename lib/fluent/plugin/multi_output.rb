@@ -47,10 +47,10 @@ module Fluent
 
         @counter_mutex = Mutex.new
         # TODO: well organized counters
-        @num_errors_metrics = metrics_create(namespace: "Fluentd", subsystem: "multi_output", name: "num_errors", help_text: "Number of count num errors")
-        @emit_count_metrics = metrics_create(namespace: "Fluentd", subsystem: "multi_output", name: "emit_records", help_text: "Number of count emits")
-        @emit_records_metrics = metrics_create(namespace: "Fluentd", subsystem: "multi_output", name: "emit_records", help_text: "Number of emit records")
-        @emit_size_metrics =  metrics_create(namespace: "Fluentd", subsystem: "multi_output", name: "emit_size", help_text: "Total size of emit events")
+        @num_errors_metrics = nil
+        @emit_count_metrics = nil
+        @emit_records_metrics = nil
+        @emit_size_metrics = nil
         # @write_count = 0
         # @rollback_count = 0
       end
@@ -88,6 +88,11 @@ module Fluent
 
       def configure(conf)
         super
+
+        @num_errors_metrics = metrics_create(namespace: "Fluentd", subsystem: "multi_output", name: "num_errors", help_text: "Number of count num errors")
+        @emit_count_metrics = metrics_create(namespace: "Fluentd", subsystem: "multi_output", name: "emit_records", help_text: "Number of count emits")
+        @emit_records_metrics = metrics_create(namespace: "Fluentd", subsystem: "multi_output", name: "emit_records", help_text: "Number of emit records")
+        @emit_size_metrics =  metrics_create(namespace: "Fluentd", subsystem: "multi_output", name: "emit_size", help_text: "Total size of emit events")
 
         @stores.each do |store|
           store_conf = store.corresponding_config_element
