@@ -48,6 +48,10 @@ module Fluent
         @emit_count_metrics.get(self.plugin_id)
       end
 
+      def emit_size
+        @emit_size_metrics.get(self.plugin_id)
+      end
+
       def emit_records
         @emit_records_metrics.get(self.plugin_id)
       end

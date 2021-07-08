@@ -55,6 +55,22 @@ module Fluent
         # @rollback_count = 0
       end
 
+      def num_errors
+        @num_errors_metrics.get(self.plugin_id)
+      end
+
+      def emit_count
+        @emit_count_metrics.get(self.plugin_id)
+      end
+
+      def emit_size
+        @emit_size_metrics.get(self.plugin_id)
+      end
+
+      def emit_records
+        @emit_records_metrics.get(self.plugin_id)
+      end
+
       def statistics
         stats = {
           'num_errors' => @num_errors_metrics.get(self.plugin_id),
